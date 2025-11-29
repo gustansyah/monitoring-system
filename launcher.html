@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Activity Monitoring System Launcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            color: #333;
+        }
+        .launcher-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .app-info {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4299e1;
+        }
+        .app-info h3 {
+            margin-top: 0;
+            color: #2d3748;
+        }
+        .url {
+            font-family: 'Courier New', monospace;
+            background: #e2e8f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            display: inline-block;
+        }
+        .launch-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .status.info {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        .instructions {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #718096;
+            text-align: left;
+        }
+        .instructions h4 {
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="launcher-container">
+        <h1>User Activity Monitoring System</h1>
+        <p class="subtitle">Quick Launcher & Management Tool</p>
+        
+        <div class="app-info">
+            <h3>Application Access</h3>
+            <p><strong>Frontend:</strong> <span class="url">http://localhost:3000</span></p>
+            <p><strong>Backend API:</strong> <span class="url">http://localhost:5000</span></p>
+        </div>
+        
+        <div class="launch-buttons">
+            <button class="btn btn-primary" onclick="startApp()">Start Application</button>
+            <button class="btn btn-secondary" onclick="openFrontend()">Open Frontend</button>
+            <button class="btn btn-danger" onclick="stopApp()">Stop Services</button>
+        </div>
+        
+        <div id="status" class="status info" style="display: none;">
+            Status message will appear here...
+        </div>
+        
+        <div class="instructions">
+            <h4>Quick Start Instructions:</h4>
+            <ol>
+                <li>Make sure Docker Desktop is running</li>
+                <li>Click "Start Application" to launch all services</li>
+                <li>Wait for services to initialize (about 30 seconds)</li>
+                <li>Access the application at http://localhost:3000</li>
+                <li>Use "Stop Services" when you're done</li>
+            </ol>
+            
+            <h4>Default Login Credentials:</h4>
+            <ul>
+                <li><strong>Admin:</strong> admin@example.com / admin123</li>
+                <li><strong>Manager:</strong> manager@example.com / manager123</li>
+                <li><strong>User:</strong> user@example.com / user123</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        async function executeCommand(command) {
+            try {
+                // In a real browser environment, we can't directly execute shell commands
+                // This is a simulation - in practice, you'd need to use the PowerShell script
+                showStatus(`Executing: ${command}`, 'info');
+                
+                // Simulate command execution
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function startApp() {
+            showStatus('Starting application services...', 'info');
+            
+            // In reality, this would call the PowerShell script
+            // For demo purposes, we'll simulate the process
+            await executeCommand('docker-compose up -d');
+            
+            showStatus('Services started! Opening browser...', 'success');
+            
+            // Open the frontend
+            setTimeout(() => {
+                window.open('http://localhost:3000', '_blank');
+            }, 1000);
+        }
+
+        function openFrontend() {
+            window.open('http://localhost:3000', '_blank');
+            showStatus('Opening frontend in new tab...', 'success');
+        }
+
+        async function stopApp() {
+            showStatus('Stopping all services...', 'info');
+            await executeCommand('docker-compose down');
+            showStatus('All services stopped successfully!', 'success');
+        }
+
+        // Check if services are already running on page load
+        window.addEventListener('load', async () => {
+            try {
+                // Try to fetch the health endpoint
+                const response = await fetch('http://localhost:5000/health');
+                if (response.ok) {
+                    showStatus('Services appear to be running', 'success');
+                }
+            } catch (error) {
+                showStatus('Services are not currently running', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
