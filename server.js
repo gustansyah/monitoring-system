@@ -1,14 +1,8 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const morgan = require('morgan');
-const cors = require('cors');
 const session = require('express-session');
 const Keycloak = require('keycloak-connect');
+const cors = require('cors');
 require('dotenv').config();
-
-// Import routes
-const authRoutes = require('./routes/auth');
-const monitorRoutes = require('./routes/monitor');
 
 // Initialize Express app
 const app = express();
@@ -32,75 +26,31 @@ app.use(session({
 
 // Keycloak configuration
 const keycloakConfig = {
-  clientId: process.env.KEYCLOAK_CLIENT_ID || 'user-monitoring-app',
+  clientId: process.env.KEYCLOAK_CLIENT_ID,
   bearerOnly: true,
-  serverUrl: process.env.KEYCLOAK_URL || 'http://localhost:8080',
-  realm: process.env.KEYCLOAK_REALM || 'user-monitoring',
+  serverUrl: process.env.KEYCLOAK_URL,
+  realm: process.env.KEYCLOAK_REALM,
   credentials: {
-    secret: process.env.KEYCLOAK_CLIENT_SECRET || 'CHANGE_ME'
+    secret: process.env.KEYCLOAK_CLIENT_SECRET
   }
 };
 
 // Initialize Keycloak
 const keycloak = new Keycloak({ store: memoryStore }, keycloakConfig);
 
-// Logging middleware
-app.use(morgan('combined'));
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Database connection
-const connectDB = async () => {
-  try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://mongo:27017/projectdb';
-    
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
-    console.log('✅ MongoDB connected successfully');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
-  }
-};
-
-// Connect to database
-connectDB();
-
-// Handle database connection events
-mongoose.connection.on('connected', () => {
-  console.log('📊 Mongoose connected to MongoDB');
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('❌ Mongoose connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('⚠️ Mongoose disconnected from MongoDB');
-});
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('🔌 MongoDB connection closed through app termination');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Error during shutdown:', error);
-    process.exit(1);
-  }
-});
+// Middleware to parse JSON
+app.use(express.json());
 
 // Public route - accessible without authentication
 app.get('/', (req, res) => {
   res.json({
-    success: true,
-    message: 'Backend is running'
+    message: 'Welcome to Keycloak Protected API',
+    status: 'success',
+    endpoints: {
+      public: '/',
+      protected: '/protected',
+      admin: '/admin'
+    }
   });
 });
 
@@ -111,8 +61,8 @@ app.get('/protected', keycloak.protect(), (req, res) => {
   const userInfo = accessToken.content;
   
   res.json({
-    success: true,
     message: 'This is a protected route',
+    status: 'success',
     user: {
       username: userInfo.preferred_username || userInfo.sub,
       email: userInfo.email,
@@ -134,8 +84,8 @@ app.get('/admin', keycloak.protect('realm:admin'), (req, res) => {
   const userInfo = accessToken.content;
   
   res.json({
-    success: true,
     message: 'This is an admin-only route',
+    status: 'success',
     user: {
       username: userInfo.preferred_username || userInfo.sub,
       email: userInfo.email,
@@ -157,13 +107,10 @@ app.get('/health', (req, res) => {
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    keycloak_configured: !!process.env.KEYCLOAK_URL
   });
 });
-
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/monitor', monitorRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -172,7 +119,7 @@ app.use('*', (req, res) => {
     message: 'Route not found',
     path: req.originalUrl,
     method: req.method,
-    available_routes: ['/', '/protected', '/admin', '/health', '/api/auth', '/api/monitor']
+    available_routes: ['/', '/protected', '/admin', '/health']
   });
 });
 
@@ -180,41 +127,6 @@ app.use('*', (req, res) => {
 app.use((error, req, res, next) => {
   console.error('💥 Global error handler:', error);
   
-  // Mongoose validation error
-  if (error.name === 'ValidationError') {
-    const errors = Object.values(error.errors).map(err => err.message);
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors
-    });
-  }
-  
-  // Mongoose duplicate key error
-  if (error.code === 11000) {
-    const field = Object.keys(error.keyValue)[0];
-    return res.status(409).json({
-      success: false,
-      message: `${field} already exists`
-    });
-  }
-  
-  // JWT errors
-  if (error.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token'
-    });
-  }
-  
-  if (error.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired'
-    });
-  }
-  
-  // Default error
   res.status(error.statusCode || 500).json({
     success: false,
     message: error.message || 'Internal Server Error',
@@ -229,10 +141,9 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on http://${HOST}:${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API Base URL: http://${HOST}:${PORT}/api`);
-  console.log(`🔐 Keycloak URL: ${process.env.KEYCLOAK_URL || 'http://localhost:8080'}`);
-  console.log(`👑 Keycloak Realm: ${process.env.KEYCLOAK_REALM || 'user-monitoring'}`);
-  console.log(`🔑 Client ID: ${process.env.KEYCLOAK_CLIENT_ID || 'user-monitoring-app'}`);
+  console.log(`🔐 Keycloak URL: ${process.env.KEYCLOAK_URL}`);
+  console.log(`👑 Keycloak Realm: ${process.env.KEYCLOAK_REALM}`);
+  console.log(`🔑 Client ID: ${process.env.KEYCLOAK_CLIENT_ID}`);
   console.log(`\n📋 Available endpoints:`);
   console.log(`   GET  http://${HOST}:${PORT}/          - Public route`);
   console.log(`   GET  http://${HOST}:${PORT}/protected - Protected route (requires login)`);

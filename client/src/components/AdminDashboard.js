@@ -41,8 +41,8 @@ const AdminDashboard = ({ user, onLogout }) => {
         setLogs(logsResponse.data.data.logs);
       }
 
-      if (userActivityResponse.success) {
-        setUserActivity(userActivityResponse.data.users);
+      if (userActivityResponse.data.success) {
+        setUserActivity(userActivityResponse.data.data.users);
       }
 
       setError('');

@@ -1,0 +1,12 @@
+{
+  "realm": "user-monitoring",
+  "auth-server-url": "http://localhost:8080",
+  "ssl-required": "external",
+  "resource": "user-monitoring-app",
+  "credentials": {
+    "secret": "CHANGE_ME"
+  },
+  "confidential-port": 0,
+  "policy-enforcer": {},
+  "bearer-only": true
+}
